@@ -1,0 +1,11 @@
+{
+    "name": "TuneTime",
+    "version": "0.1.0",
+    "short_name": "TuneTime",
+    "start_url": "index.html",
+    "display": "standalone",
+    "background_color": "#fdfdfd",
+    "theme_color": "#db4938",
+    "orientation": "portrait-primary",
+    "icons": []
+}

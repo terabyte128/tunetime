@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "allowImportingTsExtensions": false,
+        "lib": ["esnext", "dom", "webworker"],
+        "noEmit": false,
+        "strict": false,
+        "outDir": "public",
+        "target": "ESNext"
+    },
+    "include": ["worker"]
+}

@@ -1,0 +1,21 @@
+{
+    "arrowParens": "avoid",
+    "singleQuote": true,
+    "tabWidth": 4,
+    "trailingComma": "all",
+    "overrides": [
+        {
+            "files": ".prettierrc",
+            "options": {
+                "parser": "json"
+            }
+        },
+        {
+            "files": "*.yml",
+            "options": {
+                "tabWidth": 2,
+                "singleQuote": false
+            }
+        }
+    ]
+}

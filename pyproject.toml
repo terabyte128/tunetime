@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "tunetime"
+version = "0.1.0"
+description = ""
+authors = ["Sam Wolfson <terabyte128@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.97.0"
+requests = "^2.31.0"
+uvicorn = "^0.22.0"
+tinydb = "^4.8.0"
+pywebpush = "^1.14.0"
+alembic = "^1.11.1"
+psycopg2 = "^2.9.6"
+
+[tool.poetry.dev-dependencies]
+black = "^23.3.0"
+
+[tool.poetry.group.dev.dependencies]
+datamodel-code-generator = "^0.20.0"
+openapi-python-client = "^0.14.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
