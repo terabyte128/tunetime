@@ -5,7 +5,7 @@
         "lib": ["esnext", "dom", "webworker"],
         "noEmit": false,
         "strict": false,
-        "outDir": "public",
+        "outDir": "dist",
         "target": "ESNext"
     },
     "include": ["worker"]
