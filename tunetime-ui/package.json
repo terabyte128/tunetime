@@ -4,10 +4,8 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "yarn dev:worker & yarn dev:vite",
-        "dev:vite": "vite --host --port 6001",
-        "dev:worker": "tsc --watch --project tsconfig.worker.json",
-        "build": "tsc && vite build && tsc --project tsconfig.worker.json",
+        "dev": "vite",
+        "build": "tsc && vite build",
         "serve": "vite preview",
         "gen-spotify-types": "npx openapi-typescript https://raw.githubusercontent.com/sonallux/spotify-web-api/main/fixed-spotify-open-api.yml -o src/spotify.d.ts"
     },
