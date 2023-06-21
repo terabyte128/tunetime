@@ -1,15 +1,17 @@
-import time
-from typing import Annotated
-from uuid import uuid4
+import secrets
+from typing import Annotated, TypedDict
 
 import requests
 from fastapi import APIRouter, Cookie, Depends, HTTPException
 from requests.models import HTTPBasicAuth
+from sqlalchemy import select
 from starlette.responses import RedirectResponse
 from tinydb import Query
 
 from tunetime.spotify.client import SpotifyClient
 
+from .db import make_session
+from .models import LoginSession, User
 from .settings import SETTINGS
 
 router = APIRouter()
@@ -24,22 +26,48 @@ def get_url(state: str):
 state_cache = []
 
 
-async def _require_session(session_id: Annotated[int | None, Cookie()] = None):
+class SessionData(TypedDict):
+    spotify_client: SpotifyClient
+    login_session: LoginSession
+
+
+async def _require_session(
+    session_id: Annotated[str | None, Cookie()] = None
+) -> SessionData:
     if not session_id:
         raise HTTPException(401, "no session")
 
-    return SpotifyClient.from_id(session_id)
+    with make_session() as session:
+        stmt = select(LoginSession).where(LoginSession.cookie_id == session_id)
+        login_session = session.execute(stmt).scalar()
+
+        if login_session is None:
+            raise HTTPException(401, "invalid session")
+
+        user = login_session.user
+
+    return {
+        "spotify_client": SpotifyClient(user.refresh_token),
+        "login_session": login_session,
+    }
 
 
-SessionDependency = Annotated[SpotifyClient, Depends(_require_session)]
+SessionDependency = Annotated[SessionData, Depends(_require_session)]
 
 
 @router.get("/login")
-def login(session_id: Annotated[int | None, Cookie()] = None):
-    if session_id:
-        return RedirectResponse("/")
+def login(session_id: Annotated[str | None, Cookie()] = None):
+    if session_id is not None:
+        with make_session() as session:
+            stmt = select(LoginSession).where(
+                LoginSession.cookie_id == session_id
+            )
+            login_session = session.execute(stmt).scalar()
 
-    state = uuid4().hex
+            if login_session is not None:
+                return RedirectResponse("/")
+
+    state = secrets.token_urlsafe()
     state_cache.append(state)
     return RedirectResponse(get_url(state))
 
@@ -64,13 +92,35 @@ def callback(code: str, state: str):
     auth_rsp.raise_for_status()
     auth_data = auth_rsp.json()
 
-    client = SpotifyClient.from_tokens(
-        auth_data["access_token"],
-        auth_data["refresh_token"],
-        auth_data["expires_in"],
+    user_rsp = requests.get(
+        "https://api.spotify.com/v1/me",
+        headers={"Authorization": f"Bearer {auth_data['access_token']}"},
     )
+    user_rsp.raise_for_status()
+    user_data = user_rsp.json()
 
-    rsp = RedirectResponse("/")
-    rsp.set_cookie("session_id", str(client.session_id), httponly=True)
+    with make_session() as session:
+        stmt = select(User).where(User.spotify_id == user_data["id"])
+        user = session.execute(stmt).scalar()
 
-    return rsp
+        if user is None:
+            user = User(spotify_id=user_data["id"])
+
+        user.refresh_token = auth_data["refresh_token"]
+
+        login_session = LoginSession()
+
+        user.sessions.append(login_session)
+
+        session.add(user)
+        session.commit()
+
+        rsp = RedirectResponse("/")
+        rsp.set_cookie(
+            "session_id",
+            str(login_session.cookie_id),
+            httponly=True,
+            secure=True,
+        )
+
+        return rsp

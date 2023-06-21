@@ -8,7 +8,7 @@ class _Settings(BaseSettings):
     chat_url: str
     webpush_private_key: str
     db_connection: str = (
-        "postgresql://tunetime:tunetime@localhost:5543/tunetime"
+        "postgresql://tunetime:tunetime@localhost:5432/tunetime"
     )
 
 

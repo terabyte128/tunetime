@@ -3,6 +3,9 @@ import { components } from './spotify';
 import './App.css';
 import useSWR, { SWRConfig } from 'swr';
 
+const PUBLIC_KEY =
+    'BCGgH6JSisdn-JleMsafEXwG-YzQWeWyzwgCIZO5sUc1tWPsNxaUVtrF2Y5ru9oJc5o2xQhwAHmGnu8yxtZXCEE';
+
 function App() {
     return (
         <SWRConfig
@@ -41,7 +44,7 @@ const HelloContainer = () => {
     const recent = useRecent();
 
     if (profile.error) {
-        window.location.href = '/oauth/login';
+        window.location.href = '/oauth2/login';
     }
 
     if (!profile.data || !recent.data) {
@@ -54,12 +57,13 @@ const HelloContainer = () => {
                 <p>you are logged in as {profile.data.display_name}</p>
                 <p>
                     and your most recently played track was{' '}
-                    <b>{recent.data.name}</b> from{' '}
-                    <b>{recent.data.album?.name}</b>.
+                    <b>{recent.data.name}</b> by{' '}
+                    <b>{recent.data.artists?.map(a => a.name).join(', ')}</b> on
+                    the album <b>{recent.data.album?.name}</b>.
                 </p>
                 <button
                     onClick={() => {
-                        fetch('/api/message', {
+                        fetch('/api/profile/share-tune', {
                             method: 'POST',
                         });
                     }}
@@ -77,22 +81,31 @@ const HelloContainer = () => {
 const PushNotifications = () => {
     const [worker, setWorker] = useState<ServiceWorkerRegistration>();
     const [permission, setPermission] = useState(Notification.permission);
-    const [sub, setSub] = useState<PushSubscription>();
+    const [hasPush, setHasPush] = useState(false);
+    const [subscription, setSubscription] = useState<PushSubscription>();
+    const [isRegistering, setIsRegistering] = useState(false);
 
     useEffect(() => {
         if (!('serviceWorker' in navigator)) {
             // Service Worker isn't supported on this browser, disable or hide UI.
-            throw new Error('service worker not supported');
+            return;
         }
 
         if (!('PushManager' in window)) {
             // Push isn't supported on this browser, disable or hide UI.
-            throw new Error('push not supported');
+            return;
         }
 
-        navigator.serviceWorker
-            .register('/service-worker.js')
-            .then(registration => setWorker(registration));
+        setHasPush(true);
+
+        (async () => {
+            const worker = await navigator.serviceWorker.register(
+                '/service-worker.js',
+            );
+            setWorker(worker);
+            const subscription = await worker.pushManager.getSubscription();
+            setSubscription(subscription || undefined);
+        })();
     }, []);
 
     return (
@@ -100,30 +113,60 @@ const PushNotifications = () => {
             <label>
                 <input
                     type="checkbox"
-                    checked={permission === 'granted'}
-                    onClick={async () => {
-                        if (!worker) return;
-                        const subscription = await worker.pushManager.subscribe(
-                            {
-                                applicationServerKey:
-                                    'BCGgH6JSisdn-JleMsafEXwG-YzQWeWyzwgCIZO5sUc1tWPsNxaUVtrF2Y5ru9oJc5o2xQhwAHmGnu8yxtZXCEE',
-                                userVisibleOnly: true,
-                            },
-                        );
-                        setSub(subscription);
-                        const result = await Notification.requestPermission();
-                        setPermission(result);
+                    disabled={
+                        !hasPush || isRegistering || permission === 'denied'
+                    }
+                    checked={subscription !== undefined}
+                    onChange={async e => {
+                        const checked = e.target.checked;
+                        if (checked) {
+                            const notificationPermission =
+                                await Notification.requestPermission();
 
-                        fetch('/api/profile/register-push', {
-                            method: 'POST',
-                            headers: {
-                                'content-type': 'application/json',
-                            },
-                            body: JSON.stringify(subscription),
-                        });
+                            setPermission(notificationPermission);
+                            if (notificationPermission === 'denied') {
+                                alert(
+                                    'you need to allow that if you want to be notified!!1!',
+                                );
+                                return;
+                            }
+
+                            if (!subscription && worker) {
+                                setIsRegistering(true);
+
+                                const localSubscription =
+                                    await worker.pushManager.subscribe({
+                                        applicationServerKey: PUBLIC_KEY,
+                                        userVisibleOnly: true,
+                                    });
+
+                                await fetch('/api/profile/register-push', {
+                                    method: 'POST',
+                                    headers: {
+                                        'content-type': 'application/json',
+                                    },
+                                    body: JSON.stringify(localSubscription),
+                                });
+
+                                setIsRegistering(false);
+                                setSubscription(localSubscription);
+                            }
+                        } else {
+                            setIsRegistering(true);
+                            subscription?.unsubscribe();
+                            await fetch('/api/profile/register-push', {
+                                method: 'DELETE',
+                                headers: {
+                                    'content-type': 'application/json',
+                                },
+                            });
+                            setSubscription(undefined);
+                            setIsRegistering(false);
+                        }
                     }}
                 />{' '}
-                i'd like notifications for when it's tunetime
+                i'd like to be notified when it's tunetime{' '}
+                {isRegistering && '(thinking...)'}
             </label>
         </>
     );

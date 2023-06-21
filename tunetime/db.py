@@ -1,7 +1,17 @@
-from tinydb import TinyDB, Query
+from sqlalchemy import create_engine
+from sqlalchemy.orm.session import Session
+
+from tunetime.settings import SETTINGS
+
+engine = create_engine(SETTINGS.db_connection)
 
 
-db = TinyDB("db.json")
+class make_session:
+    def __init__(self):
+        self.session = Session(engine)
 
-UserTable = db.table("users")
-SessionTable = db.table("sessions")
+    def __enter__(self):
+        return self.session
+
+    def __exit__(self, *_):
+        self.session.close()
