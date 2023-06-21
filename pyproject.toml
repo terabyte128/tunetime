@@ -12,7 +12,7 @@ uvicorn = "^0.22.0"
 tinydb = "^4.8.0"
 pywebpush = "^1.14.0"
 alembic = "^1.11.1"
-psycopg2 = "^2.9.6"
+psycopg2-binary = "^2.9.6"
 
 [tool.poetry.dev-dependencies]
 black = "^23.3.0"
