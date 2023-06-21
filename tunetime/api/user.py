@@ -10,7 +10,7 @@ from tunetime.spotify.types import PrivateUserObject, TrackObject
 router = APIRouter()
 
 
-@router.get("/", response_model=PrivateUserObject)
+@router.get("", response_model=PrivateUserObject)
 def get_user(session: SessionDependency):
     return session["spotify_client"].get_profile()
 
