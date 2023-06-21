@@ -4,13 +4,15 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite",
+        "dev": "vite --port 6001",
         "build": "tsc && vite build",
         "serve": "vite preview",
         "gen-spotify-types": "npx openapi-typescript https://raw.githubusercontent.com/sonallux/spotify-web-api/main/fixed-spotify-open-api.yml -o src/spotify.d.ts"
     },
     "dependencies": {
+        "@types/luxon": "^3.3.0",
         "@vitejs/plugin-basic-ssl": "^1.0.1",
+        "luxon": "^3.3.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "swr": "^2.1.5"

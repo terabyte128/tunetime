@@ -9,3 +9,17 @@ html {
     padding: 0 8px;
     max-width: 1200px;
 }
+
+.flex-horizontal {
+    display: flex;
+}
+
+.space-between {
+    justify-content: space-between;
+}
+
+.card {
+    border: 5px solid grey;
+    margin: 8px 0;
+    padding: 6px;
+}
