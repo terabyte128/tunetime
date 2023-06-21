@@ -108,6 +108,9 @@ def callback(code: str, state: str):
 
         user.refresh_token = auth_data["refresh_token"]
 
+        if user.override_display_name is None:
+            user.override_display_name = user_data.get("display_name")
+
         login_session = LoginSession()
 
         user.sessions.append(login_session)

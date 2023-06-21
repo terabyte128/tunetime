@@ -45,6 +45,8 @@ const HelloContainer = () => {
     const recent = useRecent();
     const { mutate } = useTunes();
     const [isLoading, setIsLoading] = useState(false);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [name, setName] = useState(profile?.data?.display_name);
 
     if (profile.error) {
         window.location.href = '/oauth2/login';
@@ -58,7 +60,44 @@ const HelloContainer = () => {
         <div>
             <div>
                 <PushNotifications />
-                <p>you are logged in as {profile.data.display_name}</p>
+                <p>
+                    you are logged in as {profile.data.display_name}{' '}
+                    {!isEditingProfile && (
+                        <button onClick={() => setIsEditingProfile(true)}>
+                            edit display name
+                        </button>
+                    )}
+                </p>
+                {isEditingProfile && (
+                    <div>
+                        <label>
+                            enter your name:{' '}
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                            />
+                        </label>
+                        <button
+                            onClick={async () => {
+                                await fetch('/api/profile', {
+                                    method: 'POST',
+                                    headers: {
+                                        'content-type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        display_name: name,
+                                    }),
+                                });
+                                setIsEditingProfile(false);
+                                setName('');
+                                profile.mutate();
+                            }}
+                        >
+                            ok
+                        </button>
+                    </div>
+                )}
                 <p>
                     and your most recently played track was{' '}
                     <b>{recent.data.name}</b> by{' '}

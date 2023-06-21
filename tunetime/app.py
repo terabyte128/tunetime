@@ -23,7 +23,13 @@ def root():
 
 @app.get("/api/profile", response_model=PrivateUserObject)
 def get_user(session: SessionDependency):
-    return session["spotify_client"].get_profile()
+    display_name = session["login_session"].user.display_name
+    profile = session["spotify_client"].get_profile().dict()
+
+    if display_name is not None:
+        profile = {**profile, "display_name": display_name}
+
+    return profile
 
 
 @app.get("/api/profile/recent", response_model=TrackObject)
@@ -58,6 +64,20 @@ def delete_push(session: SessionDependency):
         db_session.commit()
 
 
+class ProfileUpdate(BaseModel):
+    display_name: str
+
+
+@app.post("/api/profile", status_code=201)
+def update_profile(session: SessionDependency, update: ProfileUpdate):
+    user = session["login_session"].user
+
+    with make_session() as db_session:
+        user.override_display_name = update.display_name
+        db_session.add(user)
+        db_session.commit()
+
+
 @app.post("/api/profile/share-tune")
 def share(session: SessionDependency):
     spotify = session["spotify_client"]
@@ -65,7 +85,6 @@ def share(session: SessionDependency):
     user = login_session.user
 
     latest_track = spotify.latest_track()
-    profile = spotify.get_profile()
 
     with make_session() as db_session:
         db_session.add(user)
@@ -81,7 +100,7 @@ def share(session: SessionDependency):
 
         db_session.commit()
 
-    message = f"{profile.display_name} most recently listened to {latest_track.name} by {', '.join([i.name for i in latest_track.artists])} from the album {latest_track.album.name}: {latest_track.external_urls.spotify}"
+        message = f"{user.display_name} most recently listened to {latest_track.name} by {', '.join([i.name for i in latest_track.artists])} from the album {latest_track.album.name}: {latest_track.external_urls.spotify}"
 
     send_chat_message(message)
 
@@ -105,7 +124,7 @@ def tunes():
                 name=i.name,
                 album=i.album,
                 primary_artist=i.primary_artist,
-                user=i.user.spotify_id,
+                user=i.user.display_name,
                 created_at=i.created_at,
             )
             for i in data

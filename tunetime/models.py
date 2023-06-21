@@ -26,6 +26,15 @@ class User(Base):
     refresh_token: Mapped[str | None] = mapped_column()
     sessions: Mapped[list["LoginSession"]] = relationship(back_populates="user")
     tunes: Mapped[list["Tune"]] = relationship(back_populates="user")
+    override_display_name: Mapped[str | None] = mapped_column()
+
+    @property
+    def display_name(self):
+        return (
+            self.override_display_name
+            if self.override_display_name
+            else self.spotify_id
+        )
 
 
 class LoginSession(Base):
@@ -34,7 +43,9 @@ class LoginSession(Base):
     cookie_id: Mapped[str] = mapped_column(default=make_secure_token)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[User] = relationship(back_populates="sessions")
-    push_registration: Mapped[DictStrAny | None] = mapped_column(JSON(none_as_null=True))
+    push_registration: Mapped[DictStrAny | None] = mapped_column(
+        JSON(none_as_null=True)
+    )
 
 
 class Tune(Base):

@@ -3,7 +3,7 @@ services:
   app:
     user: 1000:1000
     volumes:
-      - ./tunetime:/app/tunetime
+      - ./:/app
     command: ["uvicorn", "tunetime.app:app", "--reload", "--port", "5555", "--host", "0.0.0.0"]
   reverse_proxy:
     user: 1000:1000
