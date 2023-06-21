@@ -1,0 +1,9 @@
+:9090 {
+    root * /usr/share/caddy
+    route {
+        reverse_proxy /api/* app:5555
+        reverse_proxy /oauth2/* app:5555
+        try_files {path} /index.html
+        file_server
+    }
+}

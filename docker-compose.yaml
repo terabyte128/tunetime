@@ -1,0 +1,52 @@
+version: "2"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: backend.dockerfile
+    env_file:
+      - .env
+    environment:
+      - DB_CONNECTION=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@db:5432/${DATABASE_NAME}
+    restart: unless-stopped
+    networks:
+      - backend
+    depends_on:
+      - db
+  reverse_proxy:
+    build:
+      context: .
+      dockerfile: reverse-proxy.dockerfile
+    depends_on:
+      - app
+    networks:
+      - frontend
+      - backend
+    labels:
+      - "traefik.http.routers.tunetime.rule=Host(`tunetime.wolfbyt.es`)"
+      - "traefik.http.routers.tunetime.entrypoints=websecure"
+      - "traefik.http.routers.tunetime.tls=true"
+      - "traefik.http.routers.tunetime.tls.certresolver=digitalocean"
+      - "traefik.http.services.tunetime.loadbalancer.server.port=9090"
+      - "traefik.http.services.tunetime.loadbalancer.healthcheck.path=/status"
+      - "traefik.enable=true"
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    volumes:
+      - data:/var/lib/postgresql/data
+    networks:
+      - backend
+    restart: unless-stopped
+volumes:
+  data:
+
+networks:
+    frontend:
+        external:
+            name: nginx
+    backend:
+
