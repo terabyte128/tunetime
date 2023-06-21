@@ -1,6 +1,6 @@
 from pywebpush import WebPushException, webpush
 from requests.models import Response
-from sqlalchemy import select
+from sqlalchemy import select, null
 
 from tunetime.db import make_session
 from tunetime.models import LoginSession
@@ -27,7 +27,7 @@ def send_push(session: LoginSession, message: str):
         # remove the registration, no longer valid
         if rsp.status_code in [404, 410]:
             with make_session() as db_session:
-                session.push_registration = None
+                session.push_registration = null()  # type: ignore
                 db_session.add(session)
                 db_session.commit()
 
