@@ -77,7 +77,7 @@ const HelloContainer = () => {
                         setIsLoading(false);
                     }}
                 >
-                    tell your friends!
+                    share your song with your friends!
                 </button>
             </div>
             <TuneCards />

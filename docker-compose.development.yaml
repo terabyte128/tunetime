@@ -1,0 +1,12 @@
+version: "2"
+services:
+  app:
+    user: 1000:1000
+    volumes:
+      - ./tunetime:/app/tunetime
+    command: ["uvicorn", "tunetime.app:app", "--reload", "--port", "5555", "--host", "0.0.0.0"]
+  reverse_proxy:
+    user: 1000:1000
+    volumes:
+      - ./tunetime-ui/public/service-worker.js:/usr/share/caddy/service-worker.js
+

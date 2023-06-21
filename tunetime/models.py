@@ -34,7 +34,7 @@ class LoginSession(Base):
     cookie_id: Mapped[str] = mapped_column(default=make_secure_token)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[User] = relationship(back_populates="sessions")
-    push_registration: Mapped[DictStrAny | None] = mapped_column()
+    push_registration: Mapped[DictStrAny | None] = mapped_column(JSON(none_as_null=True))
 
 
 class Tune(Base):

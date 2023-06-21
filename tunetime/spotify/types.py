@@ -626,10 +626,10 @@ class ImageObject(BaseModel):
         description="The source URL of the image.\n",
         example="https://i.scdn.co/image/ab67616d00001e02ff9ca10b55ce82ae553c8228\n",
     )
-    height: int = Field(
+    height: int | None = Field(
         ..., description="The image height in pixels.\n", example=300
     )
-    width: int = Field(
+    width: int | None = Field(
         ..., description="The image width in pixels.\n", example=300
     )
 

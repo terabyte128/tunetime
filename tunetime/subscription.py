@@ -1,17 +1,18 @@
 from pywebpush import WebPushException, webpush
-from requests.models import Response
-from sqlalchemy import select, null
+from tunetime.gchat import send_chat_message
+from sqlalchemy import select
 
 from tunetime.db import make_session
 from tunetime.models import LoginSession
 from tunetime.settings import SETTINGS
 
 
-def send_push(session: LoginSession, message: str):
+def send_push(session: LoginSession, message: str, db_session):
     if not session.push_registration:
         raise ValueError("session has no push registration")
 
     try:
+        print("pushing", session.user.spotify_id)
         webpush(
             session.push_registration,
             message,
@@ -19,17 +20,10 @@ def send_push(session: LoginSession, message: str):
             vapid_claims={"sub": "mailto:terabyte128@gmail.com"},
         )
     except WebPushException as e:
-        if not e.response:
-            raise
-
-        rsp: Response = e.response
-
-        # remove the registration, no longer valid
-        if rsp.status_code in [404, 410]:
-            with make_session() as db_session:
-                session.push_registration = null()  # type: ignore
-                db_session.add(session)
-                db_session.commit()
+        # TODO be better about failures
+        session.push_registration = None
+        db_session.add(session)
+        db_session.commit()
 
 
 def its_tunetime():
@@ -39,5 +33,13 @@ def its_tunetime():
         )
         results = db_session.execute(stmt).scalars()
 
+        send_chat_message(
+            "it's tunetime! open https://tunetime.wolfbyt.es to share your tunes :)"
+        )
+
         for session in results:
-            send_push(session, "it's tunetime! share ur tunes with ur friends.")
+            send_push(
+                session,
+                "it's tunetime! share ur tunes with ur friends.",
+                db_session,
+            )
