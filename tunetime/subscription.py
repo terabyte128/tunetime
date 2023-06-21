@@ -1,9 +1,10 @@
+from pywebpush import WebPushException, webpush
+from requests.models import Response
 from sqlalchemy import select
 
-from requests.models import Response
+from tunetime.db import make_session
+from tunetime.models import LoginSession
 from tunetime.settings import SETTINGS
-from tunetime.models import LoginSession, make_session
-from pywebpush import WebPushException, webpush
 
 
 def send_push(session: LoginSession, message: str):
