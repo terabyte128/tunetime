@@ -44,6 +44,7 @@ const HelloContainer = () => {
     const profile = useProfile();
     const recent = useRecent();
     const { mutate } = useTunes();
+    const [isLoading, setIsLoading] = useState(false);
 
     if (profile.error) {
         window.location.href = '/oauth2/login';
@@ -66,11 +67,14 @@ const HelloContainer = () => {
                 </p>
                 <button
                     style={{ width: '100%', height: '60px', fontSize: '18px' }}
+                    disabled={isLoading}
                     onClick={async () => {
+                        setIsLoading(true);
                         await fetch('/api/profile/share-tune', {
                             method: 'POST',
                         });
                         mutate();
+                        setIsLoading(false);
                     }}
                 >
                     tell your friends!
