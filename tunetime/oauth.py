@@ -35,14 +35,14 @@ async def _require_session(
     session_id: Annotated[str | None, Cookie()] = None
 ) -> SessionData:
     if not session_id:
-        raise HTTPException(401, "no session")
+        raise HTTPException(403, "no session")
 
     with make_session() as session:
         stmt = select(LoginSession).where(LoginSession.cookie_id == session_id)
         login_session = session.execute(stmt).scalar()
 
         if login_session is None:
-            raise HTTPException(401, "invalid session")
+            raise HTTPException(403, "invalid session")
 
         user = login_session.user
 

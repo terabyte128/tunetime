@@ -3,7 +3,7 @@ import './Banner.scss';
 import { LoadingBoundary } from './LoadingBoundary';
 import { useProfile, useRecent, useTunes } from './remote-types';
 
-const Banner = () => {
+const Banner = ({ onClose }: { onClose: () => void }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     return (
@@ -49,7 +49,16 @@ const Banner = () => {
                                                 mutateProfile();
                                             }}
                                         >
-                                            share your song with your friends!
+                                            share your tune with your friends!
+                                        </button>
+                                        <button
+                                            style={{
+                                                width: '100%',
+                                                marginTop: '8px',
+                                            }}
+                                            onClick={onClose}
+                                        >
+                                            maybe later
                                         </button>
                                     </div>
                                 </div>

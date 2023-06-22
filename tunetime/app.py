@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
+from requests.models import HTTPError
 from requests.sessions import default_headers
 from sqlalchemy import select
 
@@ -49,7 +50,11 @@ def get_user(session: SessionDependency):
             can_send_tune = user_tune is None
 
     display_name = session["login_session"].user.display_name
-    profile = session["spotify_client"].get_profile().dict()
+
+    try:
+        profile = session["spotify_client"].get_profile().dict()
+    except HTTPError as e:
+        raise HTTPException(400, "spotify request failed")
 
     if display_name is not None:
         profile = {
@@ -120,7 +125,10 @@ def share(session: SessionDependency):
 
         latest_tunetime = db_session.execute(
             select(TuneTime).order_by(TuneTime.created_at.desc())
-        ).scalar_one()
+        ).scalars().first()
+
+        if latest_tunetime is None:
+            raise HTTPException(404, "no tunetimes found")
 
         user_tune = db_session.execute(
             select(Tune).where(

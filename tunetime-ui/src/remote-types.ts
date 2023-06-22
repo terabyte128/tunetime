@@ -5,10 +5,18 @@ type User = components['schemas']['PrivateUserObject'] & {
     can_send_tune: boolean;
 };
 
-export const useProfile = () => useSWR<User>('api/profile');
+export type ResponseError = {
+    status_code: number;
+    data?: object;
+    text?: string;
+};
+
+export const useProfile = () => useSWR<User, ResponseError>('api/profile');
 
 export const useRecent = () =>
-    useSWR<components['schemas']['TrackObject']>('/api/profile/recent');
+    useSWR<components['schemas']['TrackObject'], ResponseError>(
+        '/api/profile/recent',
+    );
 
 export interface Tune {
     name: string;
@@ -18,4 +26,4 @@ export interface Tune {
     created_at: number;
 }
 
-export const useTunes = () => useSWR<Tune[]>('/api/tunes');
+export const useTunes = () => useSWR<Tune[], ResponseError>('/api/tunes');

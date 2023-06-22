@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import './App.css';
 import { SWRConfig } from 'swr';
 import Banner from './Banner';
-import { useProfile, useTunes } from './remote-types';
+import { ResponseError, useProfile, useTunes } from './remote-types';
 
 const PUBLIC_KEY =
     'BCGgH6JSisdn-JleMsafEXwG-YzQWeWyzwgCIZO5sUc1tWPsNxaUVtrF2Y5ru9oJc5o2xQhwAHmGnu8yxtZXCEE';
@@ -17,8 +17,18 @@ function App() {
                     config: RequestInit | undefined,
                 ) => {
                     const rsp = await fetch(url, config);
+
                     if (!rsp.ok) {
-                        throw new Error(rsp.statusText);
+                        const error: ResponseError = {
+                            status_code: rsp.status,
+                        };
+                        try {
+                            error['data'] = await rsp.json();
+                        } catch (e) {
+                            error['text'] = await rsp.text();
+                        }
+
+                        throw error;
                     }
 
                     return rsp.json();
@@ -37,9 +47,22 @@ const HelloContainer = () => {
     const profile = useProfile();
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [name, setName] = useState(profile?.data?.display_name);
+    const [isShowingBanner, setIsShowingBanner] = useState(true);
 
+    // redirect if forbidden
     if (profile.error) {
-        window.location.href = '/oauth2/login';
+        if (profile.error.status_code === 403) {
+            window.location.href = '/oauth2/login';
+        } else {
+            return (
+                <>
+                    error:{' '}
+                    {profile.error.data
+                        ? JSON.stringify(profile.error.data)
+                        : profile.error.text}
+                </>
+            );
+        }
     }
 
     if (!profile.data) {
@@ -50,7 +73,9 @@ const HelloContainer = () => {
         <div>
             <div>
                 <PushNotifications />
-                {profile.data.can_send_tune && <Banner />}
+                {profile.data.can_send_tune && isShowingBanner && (
+                    <Banner onClose={() => setIsShowingBanner(false)} />
+                )}
                 <p>
                     you are logged in as {profile.data.display_name}{' '}
                     {!isEditingProfile && (
@@ -86,6 +111,13 @@ const HelloContainer = () => {
                             }}
                         >
                             ok
+                        </button>
+                    </div>
+                )}
+                {profile.data.can_send_tune && (
+                    <div>
+                        <button onClick={() => setIsShowingBanner(true)}>
+                            share your tune!
                         </button>
                     </div>
                 )}
