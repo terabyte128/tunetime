@@ -66,14 +66,8 @@ class SpotifyClient:
             return None
 
     def latest_track(self) -> TrackObject:
-        current = self.currently_playing()
-
-        if current:
-            return current.item
-
-        else:
-            last = self.recently_played()
-            return last.items[0].track
+        last = self.recently_played()
+        return last.items[0].track
 
     def get_profile(self) -> PrivateUserObject:
         return self._request("GET", "me", PrivateUserObject)

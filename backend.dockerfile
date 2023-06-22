@@ -9,5 +9,7 @@ RUN apt update && \
         /root/.local/bin/poetry config virtualenvs.create false && \
         /root/.local/bin/poetry install
 
-COPY migrations/ tunetime/ alembic.ini ./tunetime/
+COPY alembic.ini ./
+COPY migrations/ ./migrations/
+COPY tunetime/ ./tunetime/
 CMD ["uvicorn", "tunetime.app:app", "--port", "5555", "--host", "0.0.0.0"]
