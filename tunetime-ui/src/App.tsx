@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { DateTime } from 'luxon';
-import { components } from './spotify';
 import './App.css';
-import useSWR, { SWRConfig } from 'swr';
+import { SWRConfig } from 'swr';
+import Banner from './Banner';
+import { useProfile, useTunes } from './remote-types';
 
 const PUBLIC_KEY =
     'BCGgH6JSisdn-JleMsafEXwG-YzQWeWyzwgCIZO5sUc1tWPsNxaUVtrF2Y5ru9oJc5o2xQhwAHmGnu8yxtZXCEE';
@@ -25,26 +26,15 @@ function App() {
             }}
         >
             <div className="container">
-                <h1>
-                    <small>it's </small>tunetime!
-                </h1>
+                <h1>tunetime</h1>
                 <HelloContainer />
             </div>
         </SWRConfig>
     );
 }
 
-const useProfile = () =>
-    useSWR<components['schemas']['PrivateUserObject']>('/api/profile');
-
-const useRecent = () =>
-    useSWR<components['schemas']['TrackObject']>('/api/profile/recent');
-
 const HelloContainer = () => {
     const profile = useProfile();
-    const recent = useRecent();
-    const { mutate } = useTunes();
-    const [isLoading, setIsLoading] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [name, setName] = useState(profile?.data?.display_name);
 
@@ -52,7 +42,7 @@ const HelloContainer = () => {
         window.location.href = '/oauth2/login';
     }
 
-    if (!profile.data || !recent.data) {
+    if (!profile.data) {
         return <>loading...</>;
     }
 
@@ -60,6 +50,7 @@ const HelloContainer = () => {
         <div>
             <div>
                 <PushNotifications />
+                {profile.data.can_send_tune && <Banner />}
                 <p>
                     you are logged in as {profile.data.display_name}{' '}
                     {!isEditingProfile && (
@@ -98,41 +89,11 @@ const HelloContainer = () => {
                         </button>
                     </div>
                 )}
-                <p>
-                    and your most recently played track was{' '}
-                    <b>{recent.data.name}</b> by{' '}
-                    <b>{recent.data.artists?.map(a => a.name).join(', ')}</b> on
-                    the album <b>{recent.data.album?.name}</b>.
-                </p>
-                <button
-                    style={{ width: '100%', height: '60px', fontSize: '18px' }}
-                    disabled={isLoading}
-                    onClick={async () => {
-                        setIsLoading(true);
-                        await fetch('/api/profile/share-tune', {
-                            method: 'POST',
-                        });
-                        mutate();
-                        setIsLoading(false);
-                    }}
-                >
-                    share your song with your friends!
-                </button>
             </div>
             <TuneCards />
         </div>
     );
 };
-
-interface Tune {
-    name: string;
-    album: string;
-    primary_artist: string;
-    user: string;
-    created_at: number;
-}
-
-const useTunes = () => useSWR<Tune[]>('/api/tunes');
 
 const TuneCards = () => {
     const { data, error } = useTunes();

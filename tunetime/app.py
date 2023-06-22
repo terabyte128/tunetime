@@ -1,11 +1,12 @@
 from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
+from requests.sessions import default_headers
 from sqlalchemy import select
-from sqlalchemy.engine import create
 
 from tunetime.db import make_session
 from tunetime.gchat import send_chat_message
-from tunetime.models import Tune, User
+from tunetime.models import Tune, TuneTime, User
 from tunetime.oauth import SessionDependency
 from tunetime.spotify.types import PrivateUserObject, TrackObject
 
@@ -21,13 +22,41 @@ def root():
     return "root"
 
 
-@app.get("/api/profile", response_model=PrivateUserObject)
+class ProfileResponse(PrivateUserObject):
+    can_send_tune: bool
+
+
+@app.get("/api/profile", response_model=ProfileResponse)
 def get_user(session: SessionDependency):
+    user = session["login_session"].user
+
+    with make_session() as db_session:
+        db_session.add(user)
+
+        latest_tunetime = db_session.execute(
+            select(TuneTime).order_by(TuneTime.created_at.desc())
+        ).scalar()
+
+        if latest_tunetime is None:
+            can_send_tune = False
+        else:
+            user_tune = db_session.execute(
+                select(Tune).where(
+                    Tune.tunetime == latest_tunetime, Tune.user == user
+                )
+            ).scalar()
+
+            can_send_tune = user_tune is None
+
     display_name = session["login_session"].user.display_name
     profile = session["spotify_client"].get_profile().dict()
 
     if display_name is not None:
-        profile = {**profile, "display_name": display_name}
+        profile = {
+            **profile,
+            "display_name": display_name,
+            "can_send_tune": can_send_tune,
+        }
 
     return profile
 
@@ -89,12 +118,26 @@ def share(session: SessionDependency):
     with make_session() as db_session:
         db_session.add(user)
 
+        latest_tunetime = db_session.execute(
+            select(TuneTime).order_by(TuneTime.created_at.desc())
+        ).scalar_one()
+
+        user_tune = db_session.execute(
+            select(Tune).where(
+                Tune.tunetime == latest_tunetime, Tune.user == user
+            )
+        ).scalar()
+
+        if user_tune is not None:
+            raise HTTPException(409, detail="you have already submitted a tune")
+
         user.tunes.append(
             Tune(
                 spotify_id=latest_track.id,
                 name=latest_track.name,
                 album=latest_track.album.name,
                 primary_artist=latest_track.artists[0].name,
+                tunetime=latest_tunetime,
             )
         )
 

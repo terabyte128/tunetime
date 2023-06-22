@@ -27,6 +27,7 @@ class User(Base):
     sessions: Mapped[list["LoginSession"]] = relationship(back_populates="user")
     tunes: Mapped[list["Tune"]] = relationship(back_populates="user")
     override_display_name: Mapped[str | None] = mapped_column()
+    created_at: Mapped[int] = mapped_column(default=lambda: int(time.time()))
 
     @property
     def display_name(self):
@@ -46,6 +47,7 @@ class LoginSession(Base):
     push_registration: Mapped[DictStrAny | None] = mapped_column(
         JSON(none_as_null=True)
     )
+    created_at: Mapped[int] = mapped_column(default=lambda: int(time.time()))
 
 
 class Tune(Base):
@@ -53,8 +55,17 @@ class Tune(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     user: Mapped[User] = relationship(back_populates="tunes")
+    tunetime_id: Mapped[int] = mapped_column(ForeignKey("tunetimes.id"))
+    tunetime: Mapped["TuneTime"] = relationship(back_populates="tunes")
     spotify_id: Mapped[str] = mapped_column()
     name: Mapped[str] = mapped_column()
     album: Mapped[str] = mapped_column()
     primary_artist: Mapped[str] = mapped_column()
+    created_at: Mapped[int] = mapped_column(default=lambda: int(time.time()))
+
+
+class TuneTime(Base):
+    __tablename__ = "tunetimes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tunes: Mapped[list[Tune]] = relationship(back_populates="tunetime")
     created_at: Mapped[int] = mapped_column(default=lambda: int(time.time()))
