@@ -31,13 +31,14 @@ def its_tunetime():
                 db_session,
             )
 
+
 def write_to_docker_log(text: str, prefix: str = "SCHEDULER: "):
     try:
         # attempt to write to fd for the initial docker process
         with open("/proc/1/fd/1", "a") as f:
             f.write(prefix + text + "\n")
             f.flush()
-    except PermissionError:
+    except:
         pass
 
     print(prefix + text)
@@ -51,10 +52,10 @@ def wait_until_tunetime():
 
     for _ in range(hour):
         write_to_docker_log("sleeping for an hour...")
-        time.sleep(60*60)
+        time.sleep(60 * 60)
 
     write_to_docker_log(f"sleeping for {minute} minutes...")
-    time.sleep(minute*60)
+    time.sleep(minute * 60)
 
 
 if __name__ == "__main__":
