@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite --port 6001",
+        "dev": "vite --port 6001 & tsc --watch",
         "build": "tsc && vite build",
         "serve": "vite preview",
         "gen-spotify-types": "npx openapi-typescript https://raw.githubusercontent.com/sonallux/spotify-web-api/main/fixed-spotify-open-api.yml -o src/spotify.d.ts"

@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import './App.css';
 import { SWRConfig } from 'swr';
 import Banner from './Banner';
-import { useProfile, useTunes } from './remote-types';
+import { ResponseError, useProfile, useTunes } from './remote-types';
 import PushNotifications from './PushNotifications';
 
 function App() {
